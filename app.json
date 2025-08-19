@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Sommelier - Personal Wine Assistant",
+    "slug": "sommelier-personal-wine-assistant",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "sommeliermobile",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "description": "Your personal wine cellar manager with AI-powered wine recognition, pairing recommendations, and expert wine advice. Discover, organize, and enjoy your wine collection like never before.",
+    "keywords": ["wine", "cellar", "sommelier", "wine tasting", "wine collection", "AI", "wine pairing", "wine advisor"],
+    "privacy": "public",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Sommelier uses the camera to identify wine labels and automatically fill in wine information using AI recognition.",
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "azurewebsites.net": {
+              "NSExceptionRequiresForwardSecrecy": false,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2"
+            }
+          }
+        }
+      },
+      "bundleIdentifier": "com.sommelier.personalwineassistant"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#fef7ed"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.sommelier.personalwineassistant",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Sommelier to access camera to identify wine labels with AI."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#fef7ed"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
