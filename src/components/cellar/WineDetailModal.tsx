@@ -544,13 +544,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
+    backgroundColor: '#7c2d12',
   },
   aiButtonText: {
     fontSize: 14,
-    color: '#7c2d12',
+    color: 'white',
     fontWeight: '600',
   },
   notesText: {
