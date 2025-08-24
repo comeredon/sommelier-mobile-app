@@ -191,9 +191,16 @@ export async function generateWineDescription(wineData: {
   producer?: string
   region?: string
   year?: number
-}) {
-  const language = await AsyncStorage.getItem('language') || 'en'
-  const message = `Write a concise wine description (about 100 words) for ${wineData.name}${wineData.producer ? ' by ' + wineData.producer : ''}${wineData.year ? ' (' + wineData.year + ')' : ''}${wineData.region ? ' from ' + wineData.region : ''}. Include tasting notes, characteristics, and food pairing suggestions.`
+}, detectedLanguage?: string) {
+  // Use detected language from frontend if provided, otherwise fallback to AsyncStorage
+  const language = detectedLanguage || await AsyncStorage.getItem('language') || 'en'
+  
+  // Create language-specific instruction
+  const languageInstruction = language === 'fr' 
+    ? 'Répondez en français. ' 
+    : ''
+  
+  const message = `${languageInstruction}Write a concise wine description (about 100 words) for ${wineData.name}${wineData.producer ? ' by ' + wineData.producer : ''}${wineData.year ? ' (' + wineData.year + ')' : ''}${wineData.region ? ' from ' + wineData.region : ''}. Include tasting notes, characteristics, and food pairing suggestions.`
   
   return apiRequest('/ai/chat', {
     method: 'POST',

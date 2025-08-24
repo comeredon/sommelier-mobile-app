@@ -136,6 +136,10 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
     try {
       setAiLoading(true)
 
+      // Detect current language by checking the button text translation
+      const buttonText = t('cellar.fillWithAI')
+      const currentLanguage = buttonText === 'Remplir avec IA' ? 'fr' : 'en'
+
       const wineData = {
         name: formData.name || wine.name,
         producer: formData.producer || wine.producer,
@@ -143,7 +147,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
         year: parseInt(formData.year) || wine.year,
       }
 
-      const response = await generateWineDescription(wineData)
+      const response = await generateWineDescription(wineData, currentLanguage)
       console.log('AI wine description response:', response)
       
       // Handle the response structure the same way as chat
@@ -272,7 +276,9 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>{t('cellar.type')}</Text>
               {!isEditing && (
-                <Text style={styles.detailValue}>{formData.type || wine.type}</Text>
+                <Text style={styles.detailValue}>
+                  {t(`cellar.wineTypes.${formData.type || wine.type}`)}
+                </Text>
               )}
             </View>
 
