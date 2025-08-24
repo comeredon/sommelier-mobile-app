@@ -1,17 +1,16 @@
-import React from 'react'
-import { 
-  View, 
-  Text,
-  StyleSheet, 
-  ScrollView,
-  TouchableOpacity,
-  Alert
-} from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button } from '../ui/Button'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { AuthUser, UserProfile } from '../../types'
+import { Button } from '../ui/Button'
 
 interface ProfileViewProps {
   user: AuthUser & { profile?: UserProfile }

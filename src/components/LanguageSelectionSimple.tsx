@@ -1,8 +1,7 @@
-import React from 'react'
-import { View, Text } from 'react-native'
+import { Text, View } from 'react-native'
+import { useLanguage } from '../contexts/LanguageContext'
 import { SupportedLanguage } from '../types'
 import { Button } from './ui/Button'
-import { useLanguage } from '../contexts/LanguageContext'
 
 interface LanguageSelectionProps {
   onComplete: () => void

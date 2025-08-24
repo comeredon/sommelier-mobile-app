@@ -1,22 +1,22 @@
-import React, { useState } from 'react'
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Modal
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useState } from 'react'
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { loginUser, registerUser } from '../../lib/api'
+import { AuthUser, UserProfile } from '../../types'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { useLanguage } from '../../contexts/LanguageContext'
-import { AuthUser, UserProfile } from '../../types'
-import { loginUser, registerUser } from '../../lib/api'
 
 interface AuthScreenProps {
   onSuccess: (user: AuthUser) => void

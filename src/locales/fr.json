@@ -6,7 +6,8 @@
     "back": "Retour",
     "next": "Suivant",
     "done": "Terminé",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "delete": "Supprimer"
   },
   "navigation": {
     "cellar": "Cellier",
@@ -123,7 +124,13 @@
       "sparkling": "Effervescent",
       "dessert": "Dessert",
       "fortified": "Fortifié"
-    }
+    },
+    "deleteWine": "Supprimer le Vin",
+    "confirmDelete": "Confirmer la Suppression",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir retirer '{{wineName}}' de votre cave ? Cette action ne peut pas être annulée.",
+    "delete": "Supprimer",
+    "wineDeleted": "Vin retiré de votre cave",
+    "deleteFailed": "Échec de la suppression du vin"
   },
   "chat": {
     "title": "Sommelier IA",

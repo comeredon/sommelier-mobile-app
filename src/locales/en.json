@@ -6,7 +6,8 @@
     "back": "Back",
     "next": "Next",
     "done": "Done",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "delete": "Delete"
   },
   "navigation": {
     "cellar": "Cellar",
@@ -179,7 +180,13 @@
       "dessert": "Dessert",
       "fortified": "Fortified"
     },
-    "allTypes": "All Types"
+    "allTypes": "All Types",
+    "deleteWine": "Delete Wine",
+    "confirmDelete": "Confirm Deletion",
+    "deleteConfirmation": "Are you sure you want to remove '{{wineName}}' from your cellar? This action cannot be undone.",
+    "delete": "Delete",
+    "wineDeleted": "Wine removed from your cellar",
+    "deleteFailed": "Failed to delete wine"
   },
   "chat": {
     "title": "Sommelier AI",

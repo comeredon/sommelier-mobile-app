@@ -125,9 +125,70 @@ export function CellarView() {
     setShowAddForm(true)
   }
 
+  const handleDeleteWine = async (wine: Wine) => {
+    // Show confirmation dialog with wine name
+    Alert.alert(
+      t('cellar.confirmDelete'),
+      t('cellar.deleteConfirmation').replace('{{wineName}}', wine.name),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('Deleting wine from backend:', wine.id)
+              await deleteWine(wine.id)
+              
+              // Remove wine from local state
+              setWines(prev => prev.filter(w => w.id !== wine.id))
+              
+              Alert.alert('Success', t('cellar.wineDeleted'))
+            } catch (error) {
+              console.error('Error deleting wine:', error)
+              Alert.alert('Error', t('cellar.deleteFailed'))
+            }
+          },
+        },
+      ]
+    )
+  }
+
   const handleAddWinePress = () => {
     setShowWineRecognition(true)
-  }  // Get sort option label for display
+  }  
+
+  // Get wine type color for the indicator line
+  const getWineTypeColor = (wineType: string) => {
+    switch (wineType?.toLowerCase()) {
+      case 'red':
+      case 'rouge':
+        return '#dc2626' // Red
+      case 'white':
+      case 'blanc':
+        return '#fbbf24' // Golden/Yellow for white wine
+      case 'rose':
+      case 'rosé':
+      case 'vin rosé':
+        return '#f472b6' // Pink for rosé
+      case 'sparkling':
+      case 'effervescent':
+      case 'champagne':
+        return '#60a5fa' // Light blue for sparkling
+      case 'dessert':
+        return '#a855f7' // Purple for dessert wines
+      case 'fortified':
+      case 'fortifié':
+        return '#ea580c' // Orange for fortified wines
+      default:
+        return '#6b7280' // Gray for unknown types
+    }
+  }
+
+  // Get sort option label for display
   const getSortLabel = (sortValue: string) => {
     switch (sortValue) {
       case 'name': return t('cellar.sortOptions.name')
@@ -312,16 +373,34 @@ export function CellarView() {
           ) : (
             filteredWines.map((wine) => (
               <View key={wine.id} style={styles.wineCard}>
-                <Text style={styles.wineName}>{wine.name}</Text>
-                <Text style={styles.wineProducer}>{wine.producer}</Text>
-                <View style={styles.wineDetails}>
-                  <Text style={styles.wineYear}>{wine.year}</Text>
-                  {wine.type && <Text style={styles.wineType}>{wine.type}</Text>}
-                  {wine.region && <Text style={styles.wineRegion}>{wine.region}</Text>}
+                <View style={styles.wineCardContent}>
+                  <View 
+                    style={[
+                      styles.wineTypeIndicator, 
+                      { backgroundColor: getWineTypeColor(wine.type || '') }
+                    ]} 
+                  />
+                  <View style={styles.wineInfo}>
+                    <View style={styles.wineHeader}>
+                      <Text style={styles.wineName}>{wine.name}</Text>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteWine(wine)}
+                      >
+                        <Text style={styles.deleteButtonText}>−</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.wineProducer}>{wine.producer}</Text>
+                    <View style={styles.wineDetails}>
+                      <Text style={styles.wineYear}>{wine.year}</Text>
+                      {wine.type && <Text style={styles.wineType}>{wine.type}</Text>}
+                      {wine.region && <Text style={styles.wineRegion}>{wine.region}</Text>}
+                    </View>
+                    {wine.notes && (
+                      <Text style={styles.wineNotes}>{wine.notes}</Text>
+                    )}
+                  </View>
                 </View>
-                {wine.notes && (
-                  <Text style={styles.wineNotes}>{wine.notes}</Text>
-                )}
               </View>
             ))
           )}
@@ -517,11 +596,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  wineCardContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  wineTypeIndicator: {
+    width: 4,
+    height: '100%',
+    borderRadius: 2,
+    marginRight: 12,
+    minHeight: 60,
+  },
+  wineInfo: {
+    flex: 1,
+  },
   wineName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 4,
+    flex: 1,
   },
   wineProducer: {
     fontSize: 16,
@@ -670,5 +763,24 @@ const styles = StyleSheet.create({
   pickerItem: {
     fontSize: 16,
     color: '#374151',
+  },
+  wineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  deleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#7c2d12',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 })

@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert
-} from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useEffect, useState } from 'react'
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { AuthUser } from '../../types'
 import { chatWithAI } from '../../lib/api'
+import { AuthUser } from '../../types'
 
 interface ChatInterfaceProps {
   user: AuthUser

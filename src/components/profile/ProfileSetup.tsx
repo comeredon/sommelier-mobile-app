@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useState } from 'react'
 import {
     Alert,
     ScrollView,
@@ -9,11 +10,10 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLanguage } from '../../contexts/LanguageContext'
+import { updateProfile } from '../../lib/api'
 import { AuthUser, UserProfile } from '../../types'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { updateProfile } from '../../lib/api'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface ProfileSetupProps {
   user: AuthUser

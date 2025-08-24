@@ -1,5 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { createContext, ReactNode, useContext } from 'react'
 import { useAsyncStorageState } from '../hooks/useAsyncStorageState'
 import enTranslations from '../locales/en.json'
 import frTranslations from '../locales/fr.json'

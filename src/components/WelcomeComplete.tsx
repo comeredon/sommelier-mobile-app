@@ -1,7 +1,6 @@
-import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native'
-import { Button } from './ui/Button'
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useLanguage } from '../contexts/LanguageContext'
+import { Button } from './ui/Button'
 
 interface WelcomeCompleteProps {
   onComplete: () => void
