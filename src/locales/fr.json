@@ -114,6 +114,7 @@
     "wineName": "Nom du Vin",
     "producer": "Producteur",
     "year": "Année",
+    "type": "Type de Vin",
     "wineType": "Type de Vin",
     "region": "Région",
     "notes": "Notes",
@@ -130,7 +131,15 @@
     "deleteConfirmation": "Êtes-vous sûr de vouloir retirer '{{wineName}}' de votre cave ? Cette action ne peut pas être annulée.",
     "delete": "Supprimer",
     "wineDeleted": "Vin retiré de votre cave",
-    "deleteFailed": "Échec de la suppression du vin"
+    "deleteFailed": "Échec de la suppression du vin",
+    "wineDetails": "Détails du Vin",
+    "editWine": "Modifier le Vin",
+    "addNotes": "Ajoutez vos notes de dégustation...",
+    "wineUpdated": "Vin mis à jour avec succès",
+    "updateFailed": "Échec de la mise à jour du vin",
+    "rating": "Note",
+    "price": "Prix",
+    "addedDate": "Date d'Ajout"
   },
   "chat": {
     "title": "Sommelier IA",

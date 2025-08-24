@@ -7,17 +7,20 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Modal
+  Modal,
+  FlatList
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { WineRecognitionDialog } from './WineRecognitionDialog'
+import { WineListItem } from './WineListItem'
+import { WineDetailModal } from './WineDetailModal'
+import { WineTypePicker } from './WineTypePicker'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { useAsyncStorageState } from '../../hooks/useAsyncStorageState'
 import { Wine, WineType } from '../../types'
-import { getWines, addWine as addWineAPI, updateWine, deleteWine } from '../../lib/api'
+import { getWines, addWine as addWineAPI, deleteWine } from '../../lib/api'
 
 export function CellarView() {
   const { t } = useLanguage()
@@ -28,6 +31,8 @@ export function CellarView() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('name')
   const [showSortModal, setShowSortModal] = useState(false)
+  const [selectedWine, setSelectedWine] = useState<Wine | null>(null)
+  const [showWineDetail, setShowWineDetail] = useState(false)
 
   // Fetch wines from backend on component mount
   useEffect(() => {
@@ -54,7 +59,7 @@ export function CellarView() {
     name: '',
     producer: '',
     year: '',
-    type: '',
+    type: 'red' as WineType,
     region: '',
     notes: ''
   })
@@ -72,7 +77,7 @@ export function CellarView() {
         name: newWine.name.trim(),
         producer: newWine.producer.trim(),
         year: parseInt(newWine.year) || new Date().getFullYear(),
-        type: (newWine.type as WineType) || 'red',
+        type: newWine.type,
         region: newWine.region.trim(),
         notes: newWine.notes.trim()
       }
@@ -93,7 +98,7 @@ export function CellarView() {
         name: '',
         producer: '',
         year: '',
-        type: 'red',
+        type: 'red' as WineType,
         region: '',
         notes: ''
       })
@@ -159,34 +164,25 @@ export function CellarView() {
 
   const handleAddWinePress = () => {
     setShowWineRecognition(true)
-  }  
-
-  // Get wine type color for the indicator line
-  const getWineTypeColor = (wineType: string) => {
-    switch (wineType?.toLowerCase()) {
-      case 'red':
-      case 'rouge':
-        return '#dc2626' // Red
-      case 'white':
-      case 'blanc':
-        return '#fbbf24' // Golden/Yellow for white wine
-      case 'rose':
-      case 'rosé':
-      case 'vin rosé':
-        return '#f472b6' // Pink for rosé
-      case 'sparkling':
-      case 'effervescent':
-      case 'champagne':
-        return '#60a5fa' // Light blue for sparkling
-      case 'dessert':
-        return '#a855f7' // Purple for dessert wines
-      case 'fortified':
-      case 'fortifié':
-        return '#ea580c' // Orange for fortified wines
-      default:
-        return '#6b7280' // Gray for unknown types
-    }
   }
+
+  const handleWinePress = (wine: Wine) => {
+    setSelectedWine(wine)
+    setShowWineDetail(true)
+  }
+
+  const handleWineUpdate = (updatedWine: Wine) => {
+    setWines(prevWines => 
+      prevWines.map(wine => 
+        wine.id === updatedWine.id ? updatedWine : wine
+      )
+    )
+  }
+
+  const handleCloseWineDetail = () => {
+    setShowWineDetail(false)
+    setSelectedWine(null)
+  }  
 
   // Get sort option label for display
   const getSortLabel = (sortValue: string) => {
@@ -269,6 +265,14 @@ export function CellarView() {
               onChangeText={(text) => setNewWine({ ...newWine, year: text })}
               keyboardType="numeric"
             />
+            
+            <View style={styles.wineTypeContainer}>
+              <Text style={styles.wineTypeLabel}>{t('cellar.type')}</Text>
+              <WineTypePicker
+                selectedType={newWine.type}
+                onSelect={(type: WineType) => setNewWine({ ...newWine, type })}
+              />
+            </View>
             
             <Input
               label={t('cellar.region')}
@@ -357,7 +361,7 @@ export function CellarView() {
           </View>
         </View>
 
-        <ScrollView style={styles.winesList}>
+        <View style={styles.winesList}>
           {filteredWines.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateTitle}>
@@ -371,40 +375,21 @@ export function CellarView() {
               </Text>
             </View>
           ) : (
-            filteredWines.map((wine) => (
-              <View key={wine.id} style={styles.wineCard}>
-                <View style={styles.wineCardContent}>
-                  <View 
-                    style={[
-                      styles.wineTypeIndicator, 
-                      { backgroundColor: getWineTypeColor(wine.type || '') }
-                    ]} 
-                  />
-                  <View style={styles.wineInfo}>
-                    <View style={styles.wineHeader}>
-                      <Text style={styles.wineName}>{wine.name}</Text>
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDeleteWine(wine)}
-                      >
-                        <Text style={styles.deleteButtonText}>−</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <Text style={styles.wineProducer}>{wine.producer}</Text>
-                    <View style={styles.wineDetails}>
-                      <Text style={styles.wineYear}>{wine.year}</Text>
-                      {wine.type && <Text style={styles.wineType}>{wine.type}</Text>}
-                      {wine.region && <Text style={styles.wineRegion}>{wine.region}</Text>}
-                    </View>
-                    {wine.notes && (
-                      <Text style={styles.wineNotes}>{wine.notes}</Text>
-                    )}
-                  </View>
-                </View>
-              </View>
-            ))
+            <FlatList
+              data={filteredWines}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <WineListItem
+                  wine={item}
+                  onPress={handleWinePress}
+                  onDelete={handleDeleteWine}
+                />
+              )}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.flatListContent}
+            />
           )}
-        </ScrollView>
+        </View>
           </>
         )}
       </SafeAreaView>
@@ -454,6 +439,13 @@ export function CellarView() {
         onClose={() => setShowWineRecognition(false)}
         onWineRecognized={handleWineRecognized}
         onManualEntry={handleManualEntry}
+      />
+
+      <WineDetailModal
+        visible={showWineDetail}
+        wine={selectedWine}
+        onClose={handleCloseWineDetail}
+        onUpdate={handleWineUpdate}
       />
     </LinearGradient>
   )
@@ -563,6 +555,9 @@ const styles = StyleSheet.create({
   winesList: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  flatListContent: {
+    paddingVertical: 8,
   },
   emptyState: {
     paddingVertical: 48,
@@ -782,5 +777,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  wineTypeContainer: {
+    marginBottom: 16,
+  },
+  wineTypeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
   },
 })

@@ -147,6 +147,7 @@
     "producerPlaceholder": "e.g., Château Margaux",
     "year": "Year",
     "yearPlaceholder": "e.g., 2015",
+    "type": "Wine Type",
     "region": "Region",
     "regionPlaceholder": "e.g., Bordeaux, France",
     "notes": "Notes",
@@ -186,7 +187,15 @@
     "deleteConfirmation": "Are you sure you want to remove '{{wineName}}' from your cellar? This action cannot be undone.",
     "delete": "Delete",
     "wineDeleted": "Wine removed from your cellar",
-    "deleteFailed": "Failed to delete wine"
+    "deleteFailed": "Failed to delete wine",
+    "wineDetails": "Wine Details",
+    "editWine": "Edit Wine",
+    "addNotes": "Add your tasting notes...",
+    "wineUpdated": "Wine updated successfully",
+    "updateFailed": "Failed to update wine",
+    "rating": "Rating",
+    "price": "Price",
+    "addedDate": "Added Date"
   },
   "chat": {
     "title": "Sommelier AI",
