@@ -8,7 +8,10 @@ import {
   TextInput,
   Alert,
   Modal,
-  FlatList
+  FlatList,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -20,7 +23,7 @@ import { WineDetailModal } from './WineDetailModal'
 import { WineTypePicker } from './WineTypePicker'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { Wine, WineType } from '../../types'
-import { getWines, addWine as addWineAPI, deleteWine } from '../../lib/api'
+import { getWines, addWine as addWineAPI, deleteWine, generateWineDescription } from '../../lib/api'
 
 export function CellarView() {
   const { t } = useLanguage()
@@ -33,6 +36,7 @@ export function CellarView() {
   const [showSortModal, setShowSortModal] = useState(false)
   const [selectedWine, setSelectedWine] = useState<Wine | null>(null)
   const [showWineDetail, setShowWineDetail] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
 
   // Fetch wines from backend on component mount
   useEffect(() => {
@@ -60,8 +64,7 @@ export function CellarView() {
     producer: '',
     year: '',
     type: 'red' as WineType,
-    region: '',
-    notes: ''
+    region: ''
   })
 
   const addWine = async () => {
@@ -78,8 +81,7 @@ export function CellarView() {
         producer: newWine.producer.trim(),
         year: parseInt(newWine.year) || new Date().getFullYear(),
         type: newWine.type,
-        region: newWine.region.trim(),
-        notes: newWine.notes.trim()
+        region: newWine.region.trim()
       }
 
       const response = await addWineAPI(wineData)
@@ -99,8 +101,7 @@ export function CellarView() {
         producer: '',
         year: '',
         type: 'red' as WineType,
-        region: '',
-        notes: ''
+        region: ''
       })
       setShowAddForm(false)
       Alert.alert('Success', t('cellar.wineAdded'))
@@ -118,8 +119,7 @@ export function CellarView() {
       producer: wineData.producer || '',
       year: wineData.year?.toString() || '',
       type: wineData.type || 'red',
-      region: wineData.region || '',
-      notes: wineData.notes || ''
+      region: wineData.region || ''
     })
     setShowWineRecognition(false)
     setShowAddForm(true)
@@ -245,59 +245,66 @@ export function CellarView() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.formContainer}>
-            <Input
-              label={t('cellar.wineName')}
-              placeholder={t('cellar.wineNamePlaceholder')}
-              value={newWine.name}
-              onChangeText={(text) => setNewWine({ ...newWine, name: text })}
-            />
-            
-            <Input
-              label={t('cellar.producer')}
-              placeholder={t('cellar.producerPlaceholder')}
-              value={newWine.producer}
-              onChangeText={(text) => setNewWine({ ...newWine, producer: text })}
-            />
-            
-            <Input
-              label={t('cellar.year')}
-              placeholder={t('cellar.yearPlaceholder')}
-              value={newWine.year}
-              onChangeText={(text) => setNewWine({ ...newWine, year: text })}
-              keyboardType="numeric"
-            />
-            
-            <View style={styles.wineTypeContainer}>
-              <Text style={styles.wineTypeLabel}>{t('cellar.type')}</Text>
-              <WineTypePicker
-                selectedType={newWine.type}
-                onSelect={(type: WineType) => setNewWine({ ...newWine, type })}
+          <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+          >
+            <ScrollView 
+              style={styles.formContainer}
+              contentContainerStyle={styles.formContentContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              <Input
+                label={t('cellar.wineName')}
+                placeholder={t('cellar.wineNamePlaceholder')}
+                value={newWine.name}
+                onChangeText={(text) => setNewWine({ ...newWine, name: text })}
               />
-            </View>
-            
-            <Input
-              label={t('cellar.region')}
-              placeholder={t('cellar.regionPlaceholder')}
-              value={newWine.region}
-              onChangeText={(text) => setNewWine({ ...newWine, region: text })}
-            />
-            
-            <Input
-              label={t('cellar.notes')}
-              placeholder={t('cellar.notesPlaceholder')}
-              value={newWine.notes}
-              onChangeText={(text) => setNewWine({ ...newWine, notes: text })}
-              multiline
-              numberOfLines={3}
-            />
-            
-            <Button
-              title={t('cellar.addWine')}
-              onPress={addWine}
-              style={styles.addButton}
-            />
-          </ScrollView>
+              
+              <Input
+                label={t('cellar.producer')}
+                placeholder={t('cellar.producerPlaceholder')}
+                value={newWine.producer}
+                onChangeText={(text) => setNewWine({ ...newWine, producer: text })}
+              />
+              
+              <Input
+                label={t('cellar.year')}
+                placeholder={t('cellar.yearPlaceholder')}
+                value={newWine.year}
+                onChangeText={(text) => setNewWine({ ...newWine, year: text })}
+                keyboardType="numeric"
+              />
+              
+              <View style={styles.wineTypeContainer}>
+                <Text style={styles.wineTypeLabel}>{t('cellar.type')}</Text>
+                <WineTypePicker
+                  selectedType={newWine.type}
+                  onSelect={(type: WineType) => setNewWine({ ...newWine, type })}
+                />
+              </View>
+              
+              <Input
+                label={t('cellar.region')}
+                placeholder={t('cellar.regionPlaceholder')}
+                value={newWine.region}
+                onChangeText={(text) => setNewWine({ ...newWine, region: text })}
+              />
+              
+              <View style={styles.notesTip}>
+                <Text style={styles.notesTipText}>
+                  💡 {t('cellar.addNotesTip')}
+                </Text>
+              </View>
+              
+              <Button
+                title={t('cellar.addWine')}
+                onPress={addWine}
+                style={styles.addButton}
+              />
+            </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </LinearGradient>
     )
@@ -550,6 +557,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
+  formContentContainer: {
+    paddingBottom: 100, // Extra padding at bottom for keyboard
+  },
   addButton: {
     marginTop: 16,
     marginBottom: 32,
@@ -560,6 +570,7 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     paddingVertical: 8,
+    paddingBottom: 100, // Extra padding to clear the tab bar
   },
   emptyState: {
     paddingVertical: 48,
@@ -788,5 +799,54 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     marginBottom: 8,
+  },
+  notesSection: {
+    marginBottom: 16,
+  },
+  notesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notesLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  aiButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#7c2d12',
+  },
+  aiButtonText: {
+    fontSize: 14,
+    color: 'white',
+    fontWeight: '600',
+  },
+  notesInput: {
+    fontSize: 16,
+    color: '#111827',
+    lineHeight: 24,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 80,
+  },
+  notesTip: {
+    backgroundColor: '#fef3c7',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 16,
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+  },
+  notesTipText: {
+    fontSize: 14,
+    color: '#92400e',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })

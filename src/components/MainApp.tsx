@@ -18,21 +18,51 @@ export function MainApp() {
   const [user, setUser] = useAsyncStorageState<any>('user', null)
   const [profileCompleted, setProfileCompleted] = useAsyncStorageState('profile-completed', false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
-  // TEMPORARY: Reset app state for testing
+  // Check for stored auth token on app startup
   useEffect(() => {
-    const resetForTesting = async () => {
-      console.log('🧹 Clearing app state for fresh testing...')
-      await AsyncStorage.clear()
-      console.log('🧹 App state cleared - restarting from language selection')
-      // Force re-render with fresh state
-      setCurrentScreen('language')
-      setHasSeenIntro(false)
-      setUser(null)
-      setProfileCompleted(false)
+    const checkAuthState = async () => {
+      try {
+        const token = await AsyncStorage.getItem('auth-token')
+        const storedUser = await AsyncStorage.getItem('user')
+        
+        if (token && storedUser) {
+          const userData = JSON.parse(storedUser)
+          console.log('Found stored auth token and user data, validating...')
+          
+          // If we have stored user data, set it and proceed
+          setUser(userData)
+          
+          // Check if profile is complete
+          const hasCompleteProfile = userData.firstName && 
+            userData.lastName && 
+            userData.winePreferences && 
+            userData.winePreferences.length > 0
+          
+          if (hasCompleteProfile) {
+            setProfileCompleted(true)
+            setCurrentScreen('main-app')
+          } else {
+            setProfileCompleted(false)
+            setCurrentScreen('profile-setup')
+          }
+        } else {
+          console.log('No stored auth found, starting fresh')
+          setCurrentScreen('language')
+        }
+      } catch (error) {
+        console.error('Error checking auth state:', error)
+        setCurrentScreen('language')
+      } finally {
+        setIsCheckingAuth(false)
+      }
     }
-    resetForTesting()
-  }, []) // Only run once on mount
+    
+    if (isLoaded) {
+      checkAuthState()
+    }
+  }, [isLoaded])
 
   // Debug logging
   console.log('MainApp state:', {
@@ -51,8 +81,8 @@ export function MainApp() {
   })
 
   useEffect(() => {
-    if (!isLoaded) {
-      console.log('Language context not loaded yet, waiting...')
+    if (!isLoaded || isCheckingAuth) {
+      console.log('Language context not loaded or checking auth, waiting...')
       return
     }
 
@@ -89,10 +119,10 @@ export function MainApp() {
 
     // Additional state debugging
     console.log('Current navigation state is appropriate')
-  }, [isLoaded, currentScreen, hasSeenIntro, user, profileCompleted])
+  }, [isLoaded, isCheckingAuth, currentScreen, hasSeenIntro, user, profileCompleted])
 
-  if (!isLoaded) {
-    return <Loading text="Loading..." />
+  if (!isLoaded || isCheckingAuth) {
+    return <Loading text={isCheckingAuth ? "Checking authentication..." : "Loading..."} />
   }
 
   const renderCurrentScreen = () => {
@@ -203,9 +233,12 @@ export function MainApp() {
               setIsEditingProfile(true)
               setCurrentScreen('profile-setup')
             }}
-            onLogout={() => {
+            onLogout={async () => {
               console.log('Logout requested')
+              // Clear stored auth token
+              await AsyncStorage.removeItem('auth-token')
               setUser(null)
+              setProfileCompleted(false)
               setCurrentScreen('language')
             }}
           />

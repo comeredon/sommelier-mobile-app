@@ -194,6 +194,7 @@
     "wineDetails": "Wine Details",
     "editWine": "Edit Wine",
     "addNotes": "Add your tasting notes...",
+    "addNotesTip": "Add wine to your cellar first, then edit it to add notes and use AI descriptions.",
     "wineUpdated": "Wine updated successfully",
     "updateFailed": "Failed to update wine",
     "rating": "Rating",
