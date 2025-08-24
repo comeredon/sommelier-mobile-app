@@ -15,21 +15,20 @@ export function WelcomeComplete({ onComplete }: WelcomeCompleteProps) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.icon}>🎉</Text>
-          <Text style={styles.title}>{t('welcome.setupComplete')}</Text>
-          <Text style={styles.subtitle}>{t('welcome.readyToExplore')}</Text>
+          <Text style={styles.title}>{t('welcome.title') || 'Welcome!'}</Text>
+          <Text style={styles.subtitle}>{t('welcome.subtitle') || 'Your profile is all set up'}</Text>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.whatsNext}>{t('welcome.whatsNext')}</Text>
-          <Text style={styles.description}>{t('welcome.getStartedDescription')}</Text>
+          <Text style={styles.whatsNext}>{t('welcome.description') || "You're ready to start building your wine collection and getting personalized recommendations."}</Text>
 
           <View style={styles.featuresContainer}>
             <View style={styles.feature}>
               <Text style={styles.featureIcon}>🍷</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{t('welcome.manageCellar')}</Text>
+                <Text style={styles.featureTitle}>{'Manage Your Cellar'}</Text>
                 <Text style={styles.featureDescription}>
-                  {t('welcome.manageeCellarDescription')}
+                  {'Track your wine collection and get insights'}
                 </Text>
               </View>
             </View>
@@ -37,9 +36,9 @@ export function WelcomeComplete({ onComplete }: WelcomeCompleteProps) {
             <View style={styles.feature}>
               <Text style={styles.featureIcon}>👤</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{t('welcome.updateProfile')}</Text>
+                <Text style={styles.featureTitle}>{'Profile & Preferences'}</Text>
                 <Text style={styles.featureDescription}>
-                  {t('welcome.updateProfileDescription')}
+                  {'Update your preferences anytime'}
                 </Text>
               </View>
             </View>
@@ -47,15 +46,15 @@ export function WelcomeComplete({ onComplete }: WelcomeCompleteProps) {
             <View style={styles.feature}>
               <Text style={styles.featureIcon}>📱</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{t('welcome.aiFeature')}</Text>
+                <Text style={styles.featureTitle}>{'AI Sommelier'}</Text>
                 <Text style={styles.featureDescription}>
-                  {t('welcome.aiFeatureDescription')}
+                  {'Get personalized wine recommendations'}
                 </Text>
               </View>
             </View>
           </View>
 
-          <Text style={styles.accessNote}>{t('welcome.accessAnytime')}</Text>
+          <Text style={styles.accessNote}>{'You can access all features from the main navigation'}</Text>
         </View>
 
         <Button

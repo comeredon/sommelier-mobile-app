@@ -1,242 +1,234 @@
-import React, { useState, useEffect } from 'react'
-import { View, StyleSheet, Text } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import React, { useEffect, useState } from 'react'
+import { View, Text } from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useLanguage } from '../contexts/LanguageContext'
+import { useAsyncStorageState } from '../hooks/useAsyncStorageState'
+import { Loading } from './ui/Loading'
+import { Button } from './ui/Button'
 import { LanguageSelection } from './LanguageSelection'
 import { IntroPage } from './intro/IntroPage'
 import { AuthScreen } from './auth/AuthScreen'
 import { ProfileSetup } from './profile/ProfileSetup'
+import { WelcomeComplete } from './WelcomeComplete'
 import { MainTabNavigator } from '../navigation/MainTabNavigator'
-// import { WelcomeComplete } from './WelcomeComplete'
-import { Loading } from './ui/Loading'
-import { Button } from './ui/Button'
-import { useLanguage } from '../contexts/LanguageContext'
-import { useAsyncStorageState } from '../hooks/useAsyncStorageState'
-import { AuthUser, UserProfile } from '../types'
-
-type AppState = 
-  | 'loading'
-  | 'language-selection'
-  | 'intro'
-  | 'auth'
-  | 'profile-setup'
-  | 'welcome-complete'
-  | 'main-app'
 
 export function MainApp() {
-  const { currentLanguage, hasSelectedLanguage } = useLanguage()
-  const [appState, setAppState] = useState<AppState>('loading')
-  const [user, setUser] = useAsyncStorageState<AuthUser | null>('user', null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [userProfile, setUserProfile] = useAsyncStorageState<UserProfile | null>('user-profile', null)
-  const [hasCompletedIntro, setHasCompletedIntro] = useAsyncStorageState<boolean>('has-completed-intro', false)
-  const [hasSeenWelcome, setHasSeenWelcome] = useAsyncStorageState<boolean>('has-seen-welcome', false)
+  const { t, language, isLoaded } = useLanguage()
+  const [currentScreen, setCurrentScreen] = useAsyncStorageState('currentScreen', 'language')
+  const [hasSeenIntro, setHasSeenIntro] = useAsyncStorageState('has-seen-intro', false)
+  const [user, setUser] = useAsyncStorageState<any>('user', null)
+  const [profileCompleted, setProfileCompleted] = useAsyncStorageState('profile-completed', false)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
 
-  // Determine initial app state based on stored data
+  // TEMPORARY: Reset app state for testing
   useEffect(() => {
-    const determineInitialState = async () => {
-      try {
-        console.log('determineInitialState called with:', {
-          hasSelectedLanguage,
-          user: user ? 'exists' : 'null',
-          userProfile: userProfile ? 'exists' : 'null',
-          hasCompletedIntro,
-          currentAppState: appState
-        })
+    const resetForTesting = async () => {
+      console.log('🧹 Clearing app state for fresh testing...')
+      await AsyncStorage.clear()
+      console.log('🧹 App state cleared - restarting from language selection')
+      // Force re-render with fresh state
+      setCurrentScreen('language')
+      setHasSeenIntro(false)
+      setUser(null)
+      setProfileCompleted(false)
+    }
+    resetForTesting()
+  }, []) // Only run once on mount
 
-        // First, check if language has been selected (like web version)
-        if (!hasSelectedLanguage) {
-          console.log('Setting state to language-selection')
-          setAppState('language-selection')
-          return
-        }
+  // Debug logging
+  console.log('MainApp state:', {
+    currentScreen,
+    hasSeenIntro,
+    user: user ? { 
+      email: user.email, 
+      id: user.id, 
+      firstName: user.firstName,
+      lastName: user.lastName,
+      hasWinePrefs: !!user.winePreferences?.length 
+    } : null,
+    profileCompleted,
+    language,
+    isLoaded
+  })
 
-        // If user exists and has profile, go to main app
-        if (user && userProfile) {
-          console.log('Setting state to main-app (user and profile exist)')
-          setAppState('main-app')
-          return
-        }
+  useEffect(() => {
+    if (!isLoaded) {
+      console.log('Language context not loaded yet, waiting...')
+      return
+    }
 
-        // If user exists but no profile, need profile setup
-        if (user && !userProfile) {
-          console.log('Setting state to profile-setup (user exists, no profile)')
-          setAppState('profile-setup')
-          return
-        }
+    // Determine the correct screen based on state
+    console.log('Determining correct screen based on state...')
+    
+    if (!currentScreen || currentScreen === 'language') {
+      console.log('No current screen or on language screen, staying on language')
+      return
+    }
 
-        // If no user, check if intro has been completed
+    // Check if the current user actually has a completed profile
+    const userHasCompleteProfile = user && user.firstName && user.lastName && user.winePreferences && user.winePreferences.length > 0
+
+    // If user is editing profile, allow them to stay on profile-setup
+    if (isEditingProfile && currentScreen === 'profile-setup') {
+      console.log('User is editing profile, staying on profile setup')
+      return
+    }
+
+    // If user exists but profile is not completed, go to profile setup
+    if (user && (!profileCompleted || !userHasCompleteProfile)) {
+      console.log('User exists but profile not completed, redirecting to profile setup')
+      setCurrentScreen('profile-setup')
+      return
+    }
+
+    // If user exists and profile is completed, go to main app
+    if (user && profileCompleted && userHasCompleteProfile) {
+      console.log('User exists and profile completed, redirecting to main app')
+      setCurrentScreen('main-app')
+      return
+    }
+
+    // Additional state debugging
+    console.log('Current navigation state is appropriate')
+  }, [isLoaded, currentScreen, hasSeenIntro, user, profileCompleted])
+
+  if (!isLoaded) {
+    return <Loading text="Loading..." />
+  }
+
+  const renderCurrentScreen = () => {
+    console.log('Rendering screen:', currentScreen)
+    
+    switch (currentScreen) {
+      case 'language':
+        return (
+          <LanguageSelection 
+            onComplete={() => {
+              console.log('Language selection completed, moving to intro')
+              setCurrentScreen('intro')
+            }} 
+          />
+        )
+      
+      case 'intro':
+        return (
+          <IntroPage 
+            onComplete={() => {
+              console.log('Intro completed, moving to auth')
+              setCurrentScreen('auth')
+              setHasSeenIntro(true)
+            }}
+          />
+        )
+      
+      case 'auth':
+        return (
+          <AuthScreen 
+            onSuccess={async (userData) => {
+              console.log('Auth success, user:', userData)
+              
+              // Check if profile is complete using direct properties on AuthUser
+              const hasCompleteProfile = userData.firstName && 
+                userData.lastName && 
+                userData.winePreferences && 
+                userData.winePreferences.length > 0
+
+              console.log('Profile complete?', hasCompleteProfile)
+              
+              // If profile is not complete, ensure profileCompleted flag is reset
+              if (!hasCompleteProfile) {
+                console.log('Profile incomplete, resetting profileCompleted flag')
+                await setProfileCompleted(false)
+              }
+              
+              setUser(userData)
+              
+              // Navigate based on profile completion
+              if (hasCompleteProfile) {
+                setCurrentScreen('main')
+              } else {
+                setCurrentScreen('profile-setup')
+              }
+            }}
+          />
+        )
+      
+      case 'profile-setup':
         if (!user) {
-          if (!hasCompletedIntro) {
-            console.log('Setting state to intro (no intro completed)')
-            setAppState('intro')
-            return
-          } else {
-            console.log('Setting state to auth (intro completed, no user)')
-            setAppState('auth')
-            return
-          }
+          console.log('No user for profile setup, redirecting to auth')
+          setCurrentScreen('auth')
+          return null
         }
-
-        // Fallback
-        console.log('Setting state to auth (fallback)')
-        setAppState('auth')
-      } catch (error) {
-        console.error('Error determining initial state:', error)
-        setAppState('language-selection')
-      }
-    }
-
-    determineInitialState()
-  }, [currentLanguage, hasSelectedLanguage, user, userProfile, hasCompletedIntro])
-
-    const handleLanguageSelected = () => {
-    // After language selection, check if intro has been completed
-    if (!hasCompletedIntro) {
-      setAppState('intro')
-    } else {
-      setAppState('auth')
-    }
-  }
-
-  const handleIntroComplete = () => {
-    setHasCompletedIntro(true)
-    setAppState('auth')
-  }
-
-  const handleAuthSuccess = (authUser: AuthUser) => {
-    console.log('handleAuthSuccess called with user:', authUser)
-    try {
-      setUser(authUser)
-      console.log('setUser completed')
+        return (
+          <ProfileSetup 
+            user={user}
+            onComplete={(userWithProfile) => {
+              console.log('Profile setup completed, updating user data')
+              setUser(userWithProfile)
+              setProfileCompleted(true)
+              
+              // If editing existing profile, go back to main app
+              if (isEditingProfile) {
+                console.log('Editing profile completed, returning to main app')
+                setIsEditingProfile(false)
+                setCurrentScreen('main-app')
+              } else {
+                // If first-time setup, show welcome complete
+                setCurrentScreen('welcome-complete')
+              }
+            }}
+          />
+        )
       
-      // Check if user already has profile data
-      const hasProfile = authUser.firstName || authUser.lastName || (authUser.winePreferences && authUser.winePreferences.length > 0)
+      case 'welcome-complete':
+        return (
+          <WelcomeComplete 
+            onComplete={() => {
+              console.log('Welcome completed, going to main app')
+              setCurrentScreen('main-app')
+            }}
+          />
+        )
       
-      if (hasProfile) {
-        // User already has profile data, create profile object and skip profile setup
-        const existingProfile: UserProfile = {
-          id: authUser.id,
-          email: authUser.email,
-          firstName: authUser.firstName,
-          lastName: authUser.lastName,
-          birthMonth: authUser.birthMonth,
-          birthYear: authUser.birthYear,
-          winePreferences: authUser.winePreferences,
-          experienceLevel: 'intermediate' // Default value
+      case 'main-app':
+        if (!user) {
+          console.log('No user for main app, redirecting to auth')
+          setCurrentScreen('auth')
+          return null
         }
-        setUserProfile(existingProfile)
-        console.log('User has existing profile, skipping profile setup')
-      }
+        return (
+          <MainTabNavigator 
+            user={user}
+            onEditProfile={() => {
+              console.log('Edit profile requested')
+              setIsEditingProfile(true)
+              setCurrentScreen('profile-setup')
+            }}
+            onLogout={() => {
+              console.log('Logout requested')
+              setUser(null)
+              setCurrentScreen('language')
+            }}
+          />
+        )
       
-      setIsLoading(true)
-      console.log('setIsLoading completed')
-    } catch (error) {
-      console.error('Error in handleAuthSuccess:', error)
+      default:
+        console.log('Unknown screen, defaulting to language selection')
+        return (
+          <LanguageSelection 
+            onComplete={() => {
+              console.log('Language selection completed (default), moving to intro')
+              setCurrentScreen('intro')
+            }} 
+          />
+        )
     }
   }
 
-  const handleProfileComplete = (userWithProfile: AuthUser & { profile: UserProfile }) => {
-    setUserProfile(userWithProfile.profile)
-    if (!hasSeenWelcome) {
-      setAppState('welcome-complete')
-    } else {
-      setAppState('main-app')
-    }
-  }
-
-  const handleWelcomeComplete = () => {
-    setHasSeenWelcome(true)
-    setAppState('main-app')
-  }
-
-  const handleLogout = async () => {
-    setUser(null)
-    setUserProfile(null)
-    setHasSeenWelcome(false)
-    await AsyncStorage.multiRemove(['user', 'user-profile', 'has-seen-welcome'])
-    setAppState('auth')
-  }
-
-  // Loading state
-  if (appState === 'loading') {
-    return (
-      <SafeAreaView style={styles.safeContainer}>
-        <View style={styles.loadingContainer}>
-          <Loading text="Loading..." />
-        </View>
-      </SafeAreaView>
-    )
-  }
-
-  // Language selection
-  if (appState === 'language-selection') {
-    return <LanguageSelection onComplete={handleLanguageSelected} />
-  }
-
-  // Intro/onboarding
-  if (appState === 'intro') {
-    return <IntroPage onComplete={handleIntroComplete} />
-  }
-
-  // Authentication
-  if (appState === 'auth') {
-    return <AuthScreen onSuccess={handleAuthSuccess} />
-  }
-
-  // Profile setup
-  if (appState === 'profile-setup' && user) {
-    return <ProfileSetup user={user} onComplete={handleProfileComplete} />
-  }
-
-  // Welcome screen (first time only)
-  if (appState === 'welcome-complete' && user && userProfile) {
-    return (
-      <SafeAreaView style={styles.safeContainer}>
-        <View style={styles.loadingContainer}>
-          <Loading text="Welcome Loading..." />
-        </View>
-      </SafeAreaView>
-    )
-  }
-
-  // Main app with navigation
-  if (appState === 'main-app' && user && userProfile) {
-    return (
-      <View style={styles.fullContainer}>
-        <MainTabNavigator 
-          user={{ ...user, profile: userProfile }} 
-          onEditProfile={() => setAppState('profile-setup')}
-          onLogout={handleLogout}
-        />
-      </View>
-    )
-  }
-
-  // Fallback loading state
   return (
-    <SafeAreaView style={styles.safeContainer}>
-      <View style={styles.loadingContainer}>
-        <Loading text="Loading..." />
-      </View>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      {renderCurrentScreen()}
+    </SafeAreaProvider>
   )
 }
-
-const styles = StyleSheet.create({
-  safeContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  fullContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    padding: 20,
-  },
-})

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   View, 
   Text, 
@@ -29,16 +29,90 @@ interface Message {
 
 export function ChatInterface({ user }: ChatInterfaceProps) {
   const { t } = useLanguage()
+  
+  // Ensure initial message is always a string
+  const welcomeMessage = t('chat.welcome')
+  console.log('Welcome message type:', typeof welcomeMessage, 'value:', welcomeMessage)
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: t('chat.welcome'),
+      text: typeof welcomeMessage === 'string' ? welcomeMessage : 'Hello! I\'m your AI sommelier. Ask me anything about wines!',
       isUser: false,
       timestamp: new Date()
     }
   ])
   const [inputText, setInputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Defensive cleanup on component mount - ensure all messages have string text
+  useEffect(() => {
+    setMessages(prevMessages => 
+      prevMessages.map(message => ({
+        ...message,
+        text: typeof message.text === 'string' ? message.text : String(message.text)
+      }))
+    )
+  }, [])
+
+  // Helper function to safely format any AI response to a string
+  const formatResponseToString = (response: any): string => {
+    if (typeof response === 'string') {
+      return response
+    }
+    
+    if (response && typeof response === 'object') {
+      // Handle structured response with primaryRecommendation and explanation
+      if (response.primaryRecommendation && response.explanation) {
+        // Handle case where primaryRecommendation is an object
+        let recommendationText = ''
+        if (typeof response.primaryRecommendation === 'string') {
+          recommendationText = response.primaryRecommendation
+        } else if (response.primaryRecommendation && typeof response.primaryRecommendation === 'object') {
+          // Extract meaningful text from the recommendation object
+          if (response.primaryRecommendation.reasoning) {
+            recommendationText = response.primaryRecommendation.reasoning
+          } else if (response.primaryRecommendation.wineName && response.primaryRecommendation.producer) {
+            recommendationText = `I recommend the ${response.primaryRecommendation.wineName} by ${response.primaryRecommendation.producer}`
+            if (response.primaryRecommendation.year) {
+              recommendationText += ` (${response.primaryRecommendation.year})`
+            }
+          } else {
+            // Try to extract any string values from the object
+            const values = Object.values(response.primaryRecommendation).filter(val => typeof val === 'string')
+            recommendationText = values.length > 0 ? values.join(' - ') : 'Wine recommendation available'
+          }
+        }
+        
+        return `${recommendationText}\n\n${response.explanation}`
+      } else if (response.primaryRecommendation) {
+        // Handle case where only primaryRecommendation exists
+        if (typeof response.primaryRecommendation === 'string') {
+          return response.primaryRecommendation
+        } else if (response.primaryRecommendation && typeof response.primaryRecommendation === 'object') {
+          if (response.primaryRecommendation.reasoning) {
+            return response.primaryRecommendation.reasoning
+          } else if (response.primaryRecommendation.wineName && response.primaryRecommendation.producer) {
+            let text = `I recommend the ${response.primaryRecommendation.wineName} by ${response.primaryRecommendation.producer}`
+            if (response.primaryRecommendation.year) {
+              text += ` (${response.primaryRecommendation.year})`
+            }
+            return text
+          }
+        }
+        return String(response.primaryRecommendation)
+      } else if (response.explanation) {
+        return String(response.explanation)
+      } else {
+        // If object doesn't have expected keys, try to extract any string values
+        const values = Object.values(response).filter(val => typeof val === 'string')
+        return values.length > 0 ? values.join('\n\n') : 'I received a response but couldn\'t parse it properly.'
+      }
+    }
+    
+    // Last resort - convert anything to string
+    return String(response)
+  }
 
   const sendMessage = async () => {
     if (!inputText.trim()) return
@@ -65,9 +139,23 @@ export function ChatInterface({ user }: ChatInterfaceProps) {
       // Call the real AI API
       const response = await chatWithAI(messageText, conversationHistory)
       
+      console.log('AI Response received:', response)
+      
+      // Use the helper function to safely format any response to a string
+      let responseText = ''
+      if (response && response.response) {
+        responseText = formatResponseToString(response.response)
+      } else if (response) {
+        responseText = formatResponseToString(response)
+      } else {
+        responseText = 'I apologize, but I encountered an issue processing your request. Please try again.'
+      }
+      
+      console.log('Final response text:', responseText)
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: response.response || 'I apologize, but I encountered an issue processing your request. Please try again.',
+        text: responseText,
         isUser: false,
         timestamp: new Date()
       }
@@ -96,10 +184,11 @@ export function ChatInterface({ user }: ChatInterfaceProps) {
   }
 
   const clearChat = () => {
+    const welcomeMessage = t('chat.welcome')
     setMessages([
       {
         id: '1',
-        text: t('chat.welcome'),
+        text: typeof welcomeMessage === 'string' ? welcomeMessage : 'Hello! I\'m your AI sommelier. Ask me anything about wines!',
         isUser: false,
         timestamp: new Date()
       }
@@ -144,7 +233,7 @@ export function ChatInterface({ user }: ChatInterfaceProps) {
                       message.isUser ? styles.userMessageText : styles.aiMessageText
                     ]}
                   >
-                    {message.text}
+                    {typeof message.text === 'string' ? message.text : '[Invalid message format]'}
                   </Text>
                 </View>
               </View>

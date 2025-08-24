@@ -41,9 +41,10 @@ export function ProfileView({ user, onEdit, onLogout }: ProfileViewProps) {
     setLanguage(language === 'en' ? 'fr' : 'en')
   }
 
-  const profile = user.profile
+  // Check if profile is complete using AuthUser structure
+  const hasCompleteProfile = user.firstName && user.lastName && user.winePreferences && user.winePreferences.length > 0
 
-  if (!profile) {
+  if (!hasCompleteProfile) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.emptyState}>
@@ -70,7 +71,7 @@ export function ProfileView({ user, onEdit, onLogout }: ProfileViewProps) {
           <Text style={styles.icon}>👤</Text>
           <Text style={styles.title}>{t('profile.title')}</Text>
           <Text style={styles.welcomeText}>
-            {t('profile.welcome')} {profile.firstName || user.email}!
+            {t('profile.welcome')} {user.firstName || user.email}!
           </Text>
         </View>
 
@@ -80,25 +81,25 @@ export function ProfileView({ user, onEdit, onLogout }: ProfileViewProps) {
             
             <View style={styles.infoRow}>
               <Text style={styles.label}>{t('profile.firstName')}:</Text>
-              <Text style={styles.value}>{profile.firstName || t('profile.notProvided')}</Text>
+              <Text style={styles.value}>{user.firstName || t('profile.notProvided')}</Text>
             </View>
             
             <View style={styles.infoRow}>
               <Text style={styles.label}>{t('profile.lastName')}:</Text>
-              <Text style={styles.value}>{profile.lastName || t('profile.notProvided')}</Text>
+              <Text style={styles.value}>{user.lastName || t('profile.notProvided')}</Text>
             </View>
             
             <View style={styles.infoRow}>
               <Text style={styles.label}>{t('profile.email')}:</Text>
-              <Text style={styles.value}>{profile.email}</Text>
+              <Text style={styles.value}>{user.email}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profile.winePreferences')}</Text>
-            {profile.winePreferences && profile.winePreferences.length > 0 ? (
+            {user.winePreferences && user.winePreferences.length > 0 ? (
               <View style={styles.preferencesGrid}>
-                {profile.winePreferences.map((preference: string) => (
+                {user.winePreferences.map((preference: string) => (
                   <View key={preference} style={styles.preferenceTag}>
                     <Text style={styles.preferenceText}>
                       {t(`profile.${preference}`)}

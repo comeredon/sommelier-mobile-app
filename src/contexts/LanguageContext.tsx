@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react'
+import { View, ActivityIndicator } from 'react-native'
 import { useAsyncStorageState } from '../hooks/useAsyncStorageState'
 import enTranslations from '../locales/en.json'
 import frTranslations from '../locales/fr.json'
@@ -13,6 +14,7 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void
   setHasSelectedLanguage: (selected: boolean) => void
   t: (key: TranslationKey) => string
+  isLoaded: boolean
 }
 
 const translations = {
@@ -20,11 +22,21 @@ const translations = {
   fr: frTranslations
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+const LanguageContext = createContext<LanguageContextType>({
+  language: 'en',
+  currentLanguage: 'en',
+  hasSelectedLanguage: false,
+  setLanguage: () => {},
+  setHasSelectedLanguage: () => {},
+  t: (key: string) => key,
+  isLoaded: false
+})
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useAsyncStorageState<Language | null>('language', null)
-  const [hasSelectedLanguage, setHasSelectedLanguageState] = useAsyncStorageState<boolean>('has-selected-language', false)
+  const [language, setLanguageState, isLanguageLoaded] = useAsyncStorageState<Language | null>('language', null)
+  const [hasSelectedLanguage, setHasSelectedLanguageState, isSelectedLoaded] = useAsyncStorageState<boolean>('has-selected-language', false)
+  
+  const isLoaded = isLanguageLoaded && isSelectedLoaded
   
   // Default to 'en' if no language is selected yet, but don't persist it until user selects
   const currentLanguage = language || 'en'
@@ -66,10 +78,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     <LanguageContext.Provider value={{ 
       language: currentLanguage, 
       currentLanguage, 
-      hasSelectedLanguage,
+      hasSelectedLanguage: hasSelectedLanguage || false,
       setLanguage,
       setHasSelectedLanguage,
-      t 
+      t,
+      isLoaded
     }}>
       {children}
     </LanguageContext.Provider>
@@ -78,8 +91,5 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export function useLanguage() {
   const context = useContext(LanguageContext)
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider')
-  }
   return context
 }

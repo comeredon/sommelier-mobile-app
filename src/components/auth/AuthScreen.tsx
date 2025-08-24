@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { AuthUser } from '../../types'
+import { AuthUser, UserProfile } from '../../types'
 import { loginUser, registerUser } from '../../lib/api'
 
 interface AuthScreenProps {
@@ -40,7 +40,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
       }
       
       // Create AuthUser from response
-      const authUser: AuthUser = {
+      const authUser: AuthUser & { profile?: UserProfile } = {
         id: response.user.id || response.user._id || Date.now().toString(),
         email: response.user.email,
         name: response.user.name || response.user.firstName || email.split('@')[0],
@@ -50,6 +50,19 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
         birthMonth: response.user.birthMonth,
         birthYear: response.user.birthYear,
         winePreferences: response.user.winePreferences
+      }
+
+      // If user has completed their profile, create the profile object
+      if (response.user.firstName && response.user.lastName && response.user.winePreferences) {
+        authUser.profile = {
+          id: authUser.id,
+          email: authUser.email,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          birthMonth: response.user.birthMonth,
+          birthYear: response.user.birthYear,
+          winePreferences: response.user.winePreferences
+        }
       }
 
       onSuccess(authUser)
