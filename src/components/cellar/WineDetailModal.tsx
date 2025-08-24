@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native'
 import { Wine, WineType } from '../../types'
-import { updateWine } from '../../lib/api'
+import { updateWine, generateWineDescription } from '../../lib/api'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { WineTypePicker } from './WineTypePicker'
 
@@ -28,6 +28,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
   const { t } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     producer: '',
@@ -97,16 +98,17 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
       // Check if the response is the updated wine object (has id property)
       if (response && response.id) {
         const updatedWine = { ...wine, ...updateData }
+        // Update the parent component's wine list
         onUpdate(updatedWine)
         setIsEditing(false)
-        Alert.alert(t('success'), t('cellar.wineUpdated'))
+        Alert.alert(t('common.success'), t('cellar.wineUpdated'))
       } else {
         console.error('Update failed with response:', response)
-        Alert.alert(t('error'), response.error || t('cellar.updateFailed'))
+        Alert.alert(t('common.error'), response.error || t('cellar.updateFailed'))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating wine:', error)
-      Alert.alert(t('error'), t('cellar.updateFailed'))
+      Alert.alert(t('common.error'), t('cellar.updateFailed'))
     } finally {
       setLoading(false)
     }
@@ -126,6 +128,59 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
       })
     }
     setIsEditing(false)
+  }
+
+  const handleGenerateAIDescription = async () => {
+    if (!wine || !isEditing) return
+
+    try {
+      setAiLoading(true)
+
+      const wineData = {
+        name: formData.name || wine.name,
+        producer: formData.producer || wine.producer,
+        region: formData.region || wine.region,
+        year: parseInt(formData.year) || wine.year,
+      }
+
+      const response = await generateWineDescription(wineData)
+      console.log('AI wine description response:', response)
+      
+      // Handle the response structure the same way as chat
+      let responseText = ''
+      if (response && response.response) {
+        // Handle structured response
+        if (typeof response.response === 'string') {
+          responseText = response.response
+        } else if (response.response && typeof response.response === 'object') {
+          // If it's an object, try to extract meaningful text
+          const values = Object.values(response.response).filter(val => typeof val === 'string')
+          responseText = values.length > 0 ? values.join('\n\n') : String(response.response)
+        } else {
+          responseText = String(response.response)
+        }
+      } else if (response) {
+        responseText = String(response)
+      }
+      
+      console.log('Final wine description text:', responseText)
+      
+      if (responseText.trim()) {
+        setFormData({ ...formData, notes: responseText.trim() })
+      } else {
+        console.error('Empty response from AI')
+        Alert.alert(t('error'), 'AI generated an empty response. Please try again.')
+      }
+    } catch (error: any) {
+      console.error('Error generating wine description:', error)
+      if (error?.error && error.error.includes('404')) {
+        Alert.alert(t('error'), 'AI service temporarily unavailable. Please try again later.')
+      } else {
+        Alert.alert(t('error'), 'Failed to generate wine description')
+      }
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   if (!wine) return null
@@ -157,7 +212,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
               <ActivityIndicator size="small" color="#7c2d12" />
             ) : (
               <Text style={styles.actionButtonText}>
-                {isEditing ? t('save') : t('edit')}
+                {isEditing ? t('common.save') : t('common.edit')}
               </Text>
             )}
           </TouchableOpacity>
@@ -181,7 +236,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                   placeholderTextColor="#9ca3af"
                 />
               ) : (
-                <Text style={styles.wineName}>{wine.name}</Text>
+                <Text style={styles.wineName}>{formData.name || wine.name}</Text>
               )}
               {isEditing ? (
                 <TextInput
@@ -192,7 +247,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                   placeholderTextColor="#9ca3af"
                 />
               ) : (
-                <Text style={styles.wineProducer}>{wine.producer}</Text>
+                <Text style={styles.wineProducer}>{formData.producer || wine.producer}</Text>
               )}
             </View>
           </View>
@@ -210,14 +265,14 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                   placeholderTextColor="#9ca3af"
                 />
               ) : (
-                <Text style={styles.detailValue}>{wine.year}</Text>
+                <Text style={styles.detailValue}>{formData.year || wine.year}</Text>
               )}
             </View>
 
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>{t('cellar.type')}</Text>
               {!isEditing && (
-                <Text style={styles.detailValue}>{wine.type}</Text>
+                <Text style={styles.detailValue}>{formData.type || wine.type}</Text>
               )}
             </View>
 
@@ -242,7 +297,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                   placeholderTextColor="#9ca3af"
                 />
               ) : (
-                <Text style={styles.detailValue}>{wine.region || '—'}</Text>
+                <Text style={styles.detailValue}>{formData.region || wine.region || '—'}</Text>
               )}
             </View>
 
@@ -259,7 +314,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                 />
               ) : (
                 <Text style={styles.detailValue}>
-                  {wine.rating ? `${wine.rating}/5` : '—'}
+                  {formData.rating || wine.rating ? `${formData.rating || wine.rating}/5` : '—'}
                 </Text>
               )}
             </View>
@@ -277,7 +332,7 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                 />
               ) : (
                 <Text style={styles.detailValue}>
-                  {wine.price ? `$${wine.price}` : '—'}
+                  {formData.price || wine.price ? `$${formData.price || wine.price}` : '—'}
                 </Text>
               )}
             </View>
@@ -290,9 +345,24 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
             </View>
           </View>
 
-          {(wine.notes || isEditing) && (
+          {(wine.notes || formData.notes || isEditing) && (
             <View style={styles.notesSection}>
-              <Text style={styles.notesLabel}>{t('cellar.notes')}</Text>
+              <View style={styles.notesHeader}>
+                <Text style={styles.notesLabel}>{t('cellar.notes')}</Text>
+                {isEditing && (
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleGenerateAIDescription}
+                    disabled={aiLoading || loading}
+                  >
+                    {aiLoading ? (
+                      <ActivityIndicator size="small" color="#7c2d12" />
+                    ) : (
+                      <Text style={styles.aiButtonText}>🤖 {t('cellar.fillWithAI')}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
               {isEditing ? (
                 <TextInput
                   style={styles.notesInput}
@@ -305,14 +375,14 @@ export function WineDetailModal({ visible, wine, onClose, onUpdate }: WineDetail
                   placeholderTextColor="#9ca3af"
                 />
               ) : (
-                <Text style={styles.notesText}>{wine.notes || '—'}</Text>
+                <Text style={styles.notesText}>{formData.notes || wine.notes || '—'}</Text>
               )}
             </View>
           )}
 
           {isEditing && (
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-              <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           )}
 
@@ -459,11 +529,29 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 12,
   },
+  notesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   notesLabel: {
     fontSize: 16,
     color: '#6b7280',
     fontWeight: '500',
-    marginBottom: 12,
+  },
+  aiButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  aiButtonText: {
+    fontSize: 14,
+    color: '#7c2d12',
+    fontWeight: '600',
   },
   notesText: {
     fontSize: 16,

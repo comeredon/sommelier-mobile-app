@@ -177,6 +177,8 @@ export function CellarView() {
         wine.id === updatedWine.id ? updatedWine : wine
       )
     )
+    // Update the selected wine to reflect changes in the modal
+    setSelectedWine(updatedWine)
   }
 
   const handleCloseWineDetail = () => {

@@ -184,3 +184,19 @@ export async function recognizeWineFromImage(imageBase64: string) {
     body: JSON.stringify({ imageBase64 }),
   })
 }
+
+// Generate wine description using AI
+export async function generateWineDescription(wineData: {
+  name: string
+  producer?: string
+  region?: string
+  year?: number
+}) {
+  const language = await AsyncStorage.getItem('language') || 'en'
+  const message = `Write a concise wine description (about 100 words) for ${wineData.name}${wineData.producer ? ' by ' + wineData.producer : ''}${wineData.year ? ' (' + wineData.year + ')' : ''}${wineData.region ? ' from ' + wineData.region : ''}. Include tasting notes, characteristics, and food pairing suggestions.`
+  
+  return apiRequest('/ai/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, language }),
+  })
+}

@@ -7,7 +7,10 @@
     "next": "Suivant",
     "done": "Terminé",
     "loading": "Chargement...",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "success": "Succès",
+    "error": "Erreur",
+    "edit": "Modifier"
   },
   "navigation": {
     "cellar": "Cellier",
@@ -139,7 +142,8 @@
     "updateFailed": "Échec de la mise à jour du vin",
     "rating": "Note",
     "price": "Prix",
-    "addedDate": "Date d'Ajout"
+    "addedDate": "Date d'Ajout",
+    "fillWithAI": "Remplir avec IA"
   },
   "chat": {
     "title": "Sommelier IA",
