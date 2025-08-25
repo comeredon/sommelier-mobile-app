@@ -85,7 +85,7 @@ You have the right to:
 - **Opt-out**: Discontinue use of the Service at any time
 
 ### How to Exercise Your Rights
-Contact us at [your-email@domain.com] with your request. We will respond within 30 days.
+Contact us at [corbaisv@gmail.com] with your request. We will respond within 30 days.
 
 ## 8. Age Restrictions
 
